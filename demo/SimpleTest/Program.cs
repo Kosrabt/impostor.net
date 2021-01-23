@@ -1,5 +1,7 @@
 ﻿using Impostor.Core;
+using Impostor.Core.InterfaceProxy;
 using Impostor.Core.Pipeline;
+using Impostor.Core.ResponseProviders.Implementation;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -14,43 +16,68 @@ namespace SimpleTest
 
             var steps = new List<IExecutionStep>()
             {
-             new Dummy1(),
-             new Dummy2(),
-             new Dummy3()
+                new LoggingExecutionStep(),
+                new CodeImplementation(new PartialImplementationOfTheInterface()),
+                new DefaultAnswerExecutionStep()
             };
 
-            new ExecutionPipeline(steps).Execute(null).GetAwaiter().GetResult();
-        }
-        
+            //THis all will be hidden by DI
+            var pipeline = new ExecutionPipeline(steps);
+            var interceptor = new ExecutionInterceptor(pipeline);
+
+            var interfaceProxy = new InterfaceProxyFactory(interceptor);
+
+            var mockedInterface = (IInterfaceToMock)interfaceProxy.CreateProxy(typeof(IInterfaceToMock));
+
+            //THis will be given by the Instumentation. Like MVC
+            var result = mockedInterface.Calculate(10,20);
+
+            Console.WriteLine($"mockedInterface.Calculate(10,20) result is: {result}");
+
+            Console.WriteLine();
+            Console.WriteLine();
+            var result2 = mockedInterface.Half(10);
+
+            Console.WriteLine($"mockedInterface.Half(10,20) result is: {result2}");
+        }        
     }
 
-    class Dummy1 : IExecutionStep
+    public interface IInterfaceToMock
+    {
+        int Calculate(int a, int b);
+
+        int Half(int a);
+    }
+
+    class PartialImplementationOfTheInterface
+    {
+        public int Calculate(int a, int b)
+        {
+            Console.WriteLine("PartialImplementation is called!");
+            Console.WriteLine($"Called with a: {a} and b: {b} ");
+
+            return 1000;
+        }
+    }    
+
+
+    class LoggingExecutionStep : IExecutionStep
     {
         public async Task Execute(IExecutionRequest request, IExecutionResponse response, ExecutionStepDelegate next)
         {
-            Console.WriteLine(this.GetType().FullName + " starting");
+            Console.WriteLine("Logging: Something Starting");
             await next(request, response);
-            Console.WriteLine(this.GetType().FullName + " finishing");
+            Console.WriteLine("Logging: Something Finished");
         }
     }
 
-    class Dummy2 : IExecutionStep
+    class DefaultAnswerExecutionStep : IExecutionStep
     {
         public async Task Execute(IExecutionRequest request, IExecutionResponse response, ExecutionStepDelegate next)
         {
-            Console.WriteLine(this.GetType().FullName + " starting");
-            await next(request, response);
-            Console.WriteLine(this.GetType().FullName + " finishing");
-        }
-    }
+            Console.WriteLine("Default Implementation is called!");
 
-    class Dummy3 : IExecutionStep
-    {
-        public async Task Execute(IExecutionRequest request, IExecutionResponse response, ExecutionStepDelegate next)
-        {
-            Console.WriteLine(this.GetType().FullName + " starting");
-            await next(request, response);
-            Console.WriteLine(this.GetType().FullName + " finishing");
+            response.ReturnValue = 100;
         }
     }
 }

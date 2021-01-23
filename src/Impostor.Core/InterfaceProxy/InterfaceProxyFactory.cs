@@ -3,7 +3,7 @@ using System;
 
 namespace Impostor.Core.InterfaceProxy
 {
-    internal class InterfaceProxyFactory : IInterfaceProxyFactory
+    public class InterfaceProxyFactory : IInterfaceProxyFactory
     {
         private readonly IInterceptor interceptor;
 

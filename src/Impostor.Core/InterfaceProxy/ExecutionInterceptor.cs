@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Impostor.Core.InterfaceProxy
 {
-    internal class ExecutionInterceptor : IInterceptor
+    public class ExecutionInterceptor : IInterceptor
     {
         private readonly IExecutionPipeline executionPipeline;
 
